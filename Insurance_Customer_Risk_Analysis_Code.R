@@ -877,7 +877,8 @@ auc(ROC_model_5)
 
 lines.roc(ROC_model_5b, col = "orange")
 auc(ROC_model_5b)
->>>>>>> 08ff1eaa91f8e351afeb7d10e8939d6dce74bd59
+
+
 # 
 # #------------------------------------------------------------------------------
 # ## 3- Build Models
@@ -1098,6 +1099,7 @@ auc(ROC_model_5b)
 #                        MAE.Mat)
 # 
 # View(final.table)
+
 
 
 

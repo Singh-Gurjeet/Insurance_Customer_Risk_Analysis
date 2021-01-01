@@ -839,46 +839,6 @@ acc_Model_5_test
 
 
 
-<<<<<<< HEAD
-# 1
-# 
-# plot.roc(ROC_step.Mod, col = "Yellow")
-# lines.roc(ROC_step.Mod, col = "Yellow")
-# auc(ROC_step.Mod)
-# 
-# lines.roc(ROC_model_3, col = "red")
-# auc(ROC_model_3)
-# 
-# 
-# lines.roc(ROC_model_4, col = "purple")
-# auc(ROC_model_4)
-# 
-# lines.roc(ROC_model_5, col = "blue")
-# auc(ROC_model_5)
-# 
-# lines.roc(ROC_model_5b, col = "orange")
-# auc(ROC_model_5b)
-=======
-1
-
-plot.roc(ROC_step.Mod, col = "Yellow")
-lines.roc(ROC_step.Mod, col = "Yellow")
-auc(ROC_step.Mod)
-
-lines.roc(ROC_model_3, col = "red")
-auc(ROC_model_3)
-
-
-lines.roc(ROC_model_4, col = "purple")
-auc(ROC_model_4)
-
-lines.roc(ROC_model_5, col = "blue")
-auc(ROC_model_5)
-
-lines.roc(ROC_model_5b, col = "orange")
-auc(ROC_model_5b)
-
-
 # 
 # #------------------------------------------------------------------------------
 # ## 3- Build Models

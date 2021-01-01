@@ -1,0 +1,202 @@
+#------------------------------------------------------------------
+# Auto Insurance Customer Risk Analysis
+# Singh, Gurjeet
+# Stand-Alone program 
+#------------------------------------------------------------------
+
+library(readr)
+library(car)
+library(fBasics)
+library(ggplot2)
+library(corrplot)
+library(plyr)
+library(gmodels)
+library(MASS)
+library(gridExtra)
+library(pROC)
+
+options(scipen = 999)
+
+#----------------------------------------------------------------------------
+## 1 - Importing a Test File and check import
+#----------------------------------------------------------------------------
+
+logit_insurance_test <- read.csv("Insurance_Test.csv")
+
+summary(logit_insurance_test)
+str(logit_insurance_test)
+colnames(logit_insurance_test)[1] <- "INDEX"
+
+#----------------------------------------------------------------------------
+## 2 - DATA PREPARATION 
+#----------------------------------------------------------------------------
+
+#----------------------------------
+##clean missing values with median values
+#----------------------------------
+
+
+summary(logit_insurance_test)
+##clean missing values with median values
+
+logit_insurance_test$IMP_AGE <-ifelse(is.na(logit_insurance_test$AGE), 
+                                 45,
+                                 logit_insurance_test$AGE)
+logit_insurance_test$M_AGE <- ifelse(is.na(logit_insurance_test$AGE), 
+                                1, 0)
+
+logit_insurance_test$IMP_YOJ <-ifelse(is.na(logit_insurance_test$YOJ), 
+                                 11,
+                                 logit_insurance_test$YOJ)
+logit_insurance_test$M_YOJ <- ifelse(is.na(logit_insurance_test$YOJ), 
+                                1, 0)
+
+logit_insurance_test$IMP_INCOME <- 
+ifelse(is.na(logit_insurance_test$INCOME) & is.na(logit_insurance_test$JOB), 54000, 
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "Doctor"), 128000, 
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "Lawyer"), 88000, 
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "Manager"), 87000, 
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "Professional"), 76000,
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "Clerical"), 33000,
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "z_Blue Collar"), 58000,
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "Home Maker"), 12000,
+  ifelse(is.na(logit_insurance_test$INCOME) & (logit_insurance_test$JOB == "Student"), 6300,
+  logit_insurance_test$INCOME)))))))))
+
+
+logit_insurance_test$M_INCOME <- ifelse(is.na(logit_insurance_test$INCOME), 
+                                   1, 0)
+
+logit_insurance_test$IMP_HOME_VAL <-ifelse(is.na(logit_insurance_test$HOME_VAL), 
+                                      162000,
+                                      logit_insurance_test$HOME_VAL)
+logit_insurance_test$M_HOME_VAL <- ifelse(is.na(logit_insurance_test$HOME_VAL), 
+                                     1, 0)
+
+
+
+logit_insurance_test$IMP_CAR_AGE <-     ifelse(is.na(logit_insurance_test$CAR_AGE), 8,
+                                          ifelse(logit_insurance_test$CAR_AGE < 0, 0,
+                                                 logit_insurance_test$CAR_AGE))
+
+logit_insurance_test$M_CAR_AGE <- ifelse(is.na(logit_insurance_test$CAR_AGE), 1,
+                                    ifelse(logit_insurance_test$CAR_AGE < 0, 1,
+                                           0))
+
+
+logit_insurance_test$IMP_JOB <-  ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME > 150000, "Doctor", 
+                            ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME > 100000, "Lawyer",
+                            ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME > 85000, "Manager",
+                            ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME > 75000, "Professional",
+                            ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME > 60000, "z_Blue Collar",
+                            ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME > 35000, "Clerical",
+                            ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME >= 12000, "Home Maker",
+                            ifelse(is.na(logit_insurance_test$JOB) & logit_insurance_test$IMP_INCOME < 12000, "Student",
+                            logit_insurance_test$JOB))))))))
+
+
+logit_insurance_test$M_JOB <- ifelse(is.na(logit_insurance_test$JOB), 
+                                1, 0)
+
+
+#----------------------------------
+##Add Indicator variables
+#----------------------------------
+logit_insurance_test$Single_Parent_Ind <- ifelse(logit_insurance_test$PARENT1 =='Yes',1,0);
+logit_insurance_test$MSTATUS_Single_Ind <- ifelse(logit_insurance_test$MSTATUS =='Yes',0,1);
+logit_insurance_test$SEX_Female_Ind <- ifelse(logit_insurance_test$SEX =='M',0,1);
+logit_insurance_test$Ed_Non_Degree_Ind <- ifelse(logit_insurance_test$EDUCATION =='<High School' |
+                                              logit_insurance_test$EDUCATION =='z_High School', 1,0)
+logit_insurance_test$CU_Commercial_Ind <- ifelse(logit_insurance_test$CAR_USE =='Commercial',1,0);
+
+
+logit_insurance_test$CT_Panel_Truck_Ind <- ifelse(logit_insurance_test$CAR_TYPE =='Panel Truck',1,0);
+logit_insurance_test$CT_Pickup_Ind <- ifelse(logit_insurance_test$CAR_TYPE =='Pickup',1,0);
+logit_insurance_test$CT_Sports_Car_Ind <- ifelse(logit_insurance_test$CAR_TYPE =='Sports Car',1,0);
+logit_insurance_test$CT_Van_Ind <- ifelse(logit_insurance_test$CAR_TYPE =='Van',1,0);
+logit_insurance_test$CT_SUV_Ind <- ifelse(logit_insurance_test$CAR_TYPE =='z_SUV',1,0);
+
+logit_insurance_test$REVOKED_Ind <- ifelse(logit_insurance_test$REVOKED =='Yes',1,0);
+
+logit_insurance_test$UC_HUU_Ind <- ifelse(logit_insurance_test$URBANICITY =='Highly Urban/ Urban',1,0);
+
+
+logit_insurance_test$JOB_White_Collar_Ind <- ifelse(logit_insurance_test$IMP_JOB =='Clerical' |
+                                                 logit_insurance_test$IMP_JOB =='Doctor'|
+                                                 logit_insurance_test$IMP_JOB =='Lawyer' |
+                                                 logit_insurance_test$IMP_JOB =='Manager' |
+                                                 logit_insurance_test$IMP_JOB =='Professional', 1,0)
+logit_insurance_test$JOB_Blue_Collar_Ind <- ifelse(logit_insurance_test$IMP_JOB =='z_Blue Collar',1,0);
+logit_insurance_test$JOB_Student_Ind <- ifelse(logit_insurance_test$IMP_JOB =='Student',1,0);
+
+logit_insurance_test$Home_Owner_else_Renter_Ind <- ifelse(logit_insurance_test$IMP_HOME_VAL != 0 ,1,0);
+
+
+
+
+
+#------------------------------------------------------------------------------
+## 3- MODEL Deployment
+#-------------------------------------------------------------------------------
+#-------------------------
+## Exporting Model - Logistic Model
+#-------------------------
+log_ODDS_TARGET_FLAG <- with(logit_insurance_test, -4.5274604992 
+                            + 0.1319755174 * CLM_FREQ  
+                            + 2.3244910905 *  UC_HUU_Ind  
+                            - 0.0000068080 *  IMP_INCOME  
+                            + 0.0256698028 *  M_INCOME  
+                            + 0.8991351539 *  CU_Commercial_Ind  
+                            + 0.4860217949 *  Single_Parent_Ind  
+                            + 0.6704261814 *  REVOKED_Ind  
+                            + 0.1193321951 *  MVR_PTS  
+                            + 0.0149330842 *  TRAVTIME  
+                            + 0.5013800591 *  Ed_Non_Degree_Ind  
+                            + 0.4664214992 *  MSTATUS_Single_Ind  
+                            - 0.0570364238 *  TIF  
+                            + 0.3897772420 *  KIDSDRIV  
+                            + 1.0021040089 *  CT_Sports_Car_Ind  
+                            + 0.7847554245 *  CT_SUV_Ind  
+                            + 0.5595281011 *  CT_Pickup_Ind  
+                            + 0.5556656480 *  CT_Van_Ind  
+                            - 0.3093577902 *  Home_Owner_else_Renter_Ind)
+
+ODDS_TARGET_FLAG <- exp(log_ODDS_TARGET_FLAG)
+P_TARGET_FLAG <- ODDS_TARGET_FLAG/(1 + ODDS_TARGET_FLAG)
+
+logit_insurance_test$P_TARGET_FLAG <- P_TARGET_FLAG
+
+
+#--------------------------------
+## Exporting Model - Linear Model
+#--------------------------------
+
+P_TARGET_AMT <- with(logit_insurance_test,  4131.65436 
+                     + 0.11017 * BLUEBOOK)
+
+
+#--------------------------------
+## Creating Scoring Ouput file
+#--------------------------------
+
+FINAL_Submission <- with(logit_insurance_test, 
+                         cbind.data.frame(INDEX, 
+                                          round(P_TARGET_FLAG,2),
+                                          round(P_TARGET_AMT,2)))
+
+colnames(FINAL_Submission) <- c("INDEX", "P_TARGET_FLAG","P_TARGET_AMT")
+write.csv(FINAL_Submission, "Singh_Gurjeet_Insurance_Test_Score.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
